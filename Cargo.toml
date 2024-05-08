@@ -1,0 +1,23 @@
+[package]
+name = "time-tracker"
+version = "0.1.0"
+edition = "2018"
+authors = ["pen0x1"]
+
+[dependencies]
+actix-web = "4.0"
+actix-rt = "2.5"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+jsonwebtoken = "7.2.0"
+bcrypt = "0.10.1"
+chrono = "0.4.19"
+dotenv = "0.15.0"
+sqlx = { version = "0.5.7", features = ["postgres"] }
+
+[features]
+default = ["postgres"]
+
+# Optional dependencies for future extensions
+# async-graphql = { version = "^4.0.0", features = ["actix-web"] }
+# async-graphql-actix-web = "^4.0.0"
