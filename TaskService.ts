@@ -18,7 +18,7 @@ interface Project {
     tasks: Task[];
 }
 
-const apiClient = axios.create({
+const httpClient = axios.create({
     baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json',
@@ -26,21 +26,21 @@ const apiClient = axios.create({
     }
 });
 
-class ProjectTaskService {
-    static async fetchProjectDetails(projectId: number): Promise<Project> {
-        const response = await apiClient.get<Project>(`/projects/${projectId}`);
+class ProjectTaskManager {
+    static async fetchProjectById(projectId: number): Promise<Project> {
+        const response = await httpClient.get<Project>(`/projects/${projectId}`);
         return response.data;
     }
 
-    static async updateTaskStatus(taskId: number, status: Task['status']): Promise<Task> {
-        const response = await apiClient.patch<Task>(`/tasks/${taskId}`, {status});
+    static async updateTaskStatusById(taskId: number, newStatus: Task['status']): Promise<Task> {
+        const response = await httpClient.patch<Task>(`/tasks/${taskId}`, {status: newStatus});
         return response.data;
     }
 
-    static async addNewTask(task: Omit<Task, 'id'>): Promise<Task> {
-        const response = await apiClient.post<Task>('/tasks', task);
+    static async createTask(newTaskDetails: Omit<Task, 'id'>): Promise<Task> {
+        const response = await httpClient.post<Task>('/tasks', newTaskDetails);
         return response.data;
     }
 }
 
-export default ProjectTaskService;
+export default ProjectTaskManager;
