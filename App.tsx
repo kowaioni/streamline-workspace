@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, FC } from 'react';
 
 interface Project {
   id: string;
@@ -21,11 +21,28 @@ interface User {
   email: string;
 }
 
-const mockProjects: Project[] = [
-];
+const mockProjects: Project[] = [];
+const mockUsers: User[] = [];
 
-const mockUsers: User[] = [
-];
+const ProjectItem: FC<{ project: Project; onSelect: (projectId: string) => void }> = ({ project, onSelect }) => (
+  <li onClick={() => onSelect(project.id)}>{project.name}</li>
+);
+
+const TaskItem: FC<{ task: Task }> = ({ task }) => (
+  <li>
+    <h4>{task.title}</h4>
+    <p>{task.description}</p>
+    <p>Assigned to: {task.assignedTo.name}</p>
+    <p>Status: {task.status}</p>
+  </li>
+);
+
+const UserItem: FC<{ user: User }> = ({ user }) => (
+  <li>
+    <h3>{user.name}</h3>
+    <p>{user.email}</p>
+  </li>
+);
 
 const StreamlineWorkspace: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -52,9 +69,7 @@ const StreamlineWorkspace: React.FC = () => {
         <h2>Projects</h2>
         <ul>
           {projects.map((project) => (
-            <li key={project.id} onClick={() => handleProjectSelect(project.id)}>
-              {project.name}
-            </li>
+            <ProjectItem key={project.id} project={project} onSelect={handleProjectSelect} />
           ))}
         </ul>
       </div>
@@ -67,12 +82,7 @@ const StreamlineWorkspace: React.FC = () => {
             <h3>Tasks</h3>
             <ul>
               {selectedProject.tasks.map((task) => (
-                <li key={task.id}>
-                  <h4>{task.title}</h4>
-                  <p>{task.description}</p>
-                  <p>Assigned to: {task.assignedTo.name}</p>
-                  <p>Status: {task.status}</p>
-                </li>
+                <TaskItem key={task.id} task={task} />
               ))}
             </ul>
           </>
@@ -83,10 +93,7 @@ const StreamlineWorkspace: React.FC = () => {
         <h2>Users</h2>
         <ul>
           {users.map((user) => (
-            <li key={user.id}>
-              <h3>{user.name}</h3>
-              <p>{user.email}</p>
-            </li>
+            <UserItem key={user.id} user={user} />
           ))}
         </ul>
       </div>
