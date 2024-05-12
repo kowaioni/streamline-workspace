@@ -26,20 +26,63 @@ const httpClient = axios.create({
     }
 });
 
+class CacheStore<T> {
+    private cache: Map<string | number, T>;
+
+    constructor() {
+        this.cache = new Map();
+    }
+
+    get(key: string | number): T | undefined {
+        return this.cache.get(key);
+    }
+
+    set(key: string | number, value: T): void {
+        this.cache.set(key, value);
+    }
+
+    clear(): void {
+        this.cache.clear();
+    }
+}
+
 class ProjectTaskManager {
+    private static projectCache = new CacheStore<Project>();
+    private static taskCache = new CacheStore<Task>();
+
     static async fetchProjectById(projectId: number): Promise<Project> {
+        const cachedProject = this.projectCache.get(projectId);
+        if (cachedProject) {
+            return cachedProject;
+        }
+
         const response = await httpClient.get<Project>(`/projects/${projectId}`);
-        return response.data;
+        const project = response.data;
+
+        this.projectCache.set(projectId, project);
+
+        return project;
     }
 
     static async updateTaskStatusById(taskId: number, newStatus: Task['status']): Promise<Task> {
         const response = await httpClient.patch<Task>(`/tasks/${taskId}`, {status: newStatus});
-        return response.data;
+        const task = response.data;
+
+        const cachedTask = this.taskCache.get(taskId);
+        if (cachedTask) {
+            this.taskCache.set(taskId, {...cachedTask, status: newStatus});
+        } else {
+            this.taskCache.set(taskId, task);
+        }
+
+        return task;
     }
 
     static async createTask(newTaskDetails: Omit<Task, 'id'>): Promise<Task> {
         const response = await httpClient.post<Task>('/tasks', newTaskDetails);
-        return response.data;
+        const task = response.data;
+        
+        return task;
     }
 }
 
