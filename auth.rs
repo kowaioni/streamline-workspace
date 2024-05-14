@@ -2,17 +2,18 @@ use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation}
 use serde::{Deserialize, Serialize};
 use std::env;
 use warp::{filters::BoxedFilter, http::StatusCode, Filter, Rejection, Reply};
+use chrono::prelude::*;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
-    sub: String, 
-    exp: usize,  
+    sub: String, // Subject (user_id in this case)
+    exp: usize,  // Expiry
 }
 
 fn create_token(user_id: &str) -> Result<String, &'static str> {
     let secret = env::var("SECRET_KEY").unwrap_or_else(|_| "secret_key".to_string());
     let expiration = 60; 
-    let exp = chrono::Utc::now()
+    let exp = Utc::now()
         .checked_add_signed(chrono::Duration::minutes(expiration))
         .expect("valid timestamp")
         .timestamp();
@@ -21,6 +22,7 @@ fn create_token(user_id: &str) -> Result<String, &'static str> {
         sub: user_id.to_owned(),
         exp: exp as usize,
     };
+
     encode(
         &Header::default(),
         &claims,
@@ -44,7 +46,8 @@ fn with_auth() -> BoxedFilter<()> {
     warp::header::<String>("authorization")
         .and_then(|value: String| async move {
             let token = value.trim_start_matches("Bearer ").to_string();
-            verify_token(&token).map_err(|_| Rejection::from(warp::reject()))
+            verify_token(&token)
+                .map_err(|_| Rejection::from(warp::reject()))
         })
         .untuple_one()
         .boxed()
