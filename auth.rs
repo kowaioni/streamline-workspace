@@ -1,20 +1,10 @@
-[dependencies]
-log = "0.4"
-env_logger = "0.9"
-serde = "1.0"
-serde_derive = "1.0"
-warp = "0.3"
-jsonwebtoken = "7"
-chrono = "0.4"
-tokio = { version = "1", features = ["full"] }
-```
-```rust
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, Validation};
 use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use std::env;
 use warp::{filters::BoxedFilter, http::StatusCode, Filter, Rejection, Reply};
-use chrono::prelude::*;
+use chrono::{prelude::*, Duration};
+use once_cell::sync::Lazy; // Add this dependency to your Cargo.toml
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
@@ -22,11 +12,14 @@ struct Claims {
     exp: usize,  // Expiry
 }
 
+static SECRET_KEY: Lazy<String> = Lazy::new(|| {
+    env::var("SECRET_KEY").unwrap_or_else(|_| "secret_key".to_string())
+});
+
 fn create_token(user_id: &str) -> Result<String, &'static str> {
-    let secret = env::var("SECRET_KEY").unwrap_or_else(|_| "secret_key".to_string());
     let expiration = 60;
     let exp = Utc::now()
-        .checked_add_signed(chrono::Duration::minutes(expiration))
+        .checked_add_signed(Duration::minutes(expiration))
         .expect("valid timestamp")
         .timestamp();
 
@@ -40,7 +33,7 @@ fn create_token(user_id: &str) -> Result<String, &'static str> {
     encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(secret.as_ref()),
+        &EncodingKey::from_secret(SECRET_KEY.as_bytes()),
     )
     .map_err(|_| {
         warn!("Error creating the token");
@@ -49,10 +42,9 @@ fn create_token(user_id: &str) -> Result<String, &'static str> {
 }
 
 fn verify_token(token: &str) -> Result<Claims, &'static str> {
-    let secret = env::var("SECRET_KEY").unwrap_or_else(|_| "secret_key".to_string());
     decode::<Claims>(
         token,
-        &DecodingKey::from_secret(secret.as_ref()),
+        &DecodingKey::from_secret(SECRET_KEY.as_bytes()),
         &Validation::default(),
     )
     .map(|data| {
@@ -68,8 +60,8 @@ fn verify_token(token: &str) -> Result<Claims, &'static str> {
 fn with_auth() -> BoxedFilter<()> {
     warp::header::<String>("authorization")
         .and_then(|value: String| async move {
-            let token = value.trim_start_matches("Bearer ").to_string();
-            verify_token(&token).map_err(|_| {
+            let token = value.trim_start_matches("Bearer ");
+            verify_token(token).map_err(|_| {
                 warn!("Unauthorized access attempt");
                 Rejection::from(warp::reject())
             })
