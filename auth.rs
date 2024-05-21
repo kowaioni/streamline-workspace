@@ -4,12 +4,12 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use warp::{filters::BoxedFilter, http::StatusCode, Filter, Rejection, Reply};
 use chrono::{prelude::*, Duration};
-use once_cell::sync::Lazy; // Add this dependency to your Cargo.toml
+use once_cell::sync::Lazy;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Claims {
-    sub: String, // Subject (user_id in this case)
-    exp: usize,  // Expiry
+    sub: String,
+    exp: usize,
 }
 
 static SECRET_KEY: Lazy<String> = Lazy::new(|| {
